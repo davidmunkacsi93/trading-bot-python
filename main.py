@@ -1,8 +1,6 @@
 import tkinter as tk
 import logging
 
-from binance_futures import write_log
-
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
