@@ -1,6 +1,5 @@
 import logging
 import requests
-import pprint
 
 logger = logging.getLogger()
 
@@ -15,6 +14,3 @@ def get_contracts():
         contracts.append(contract['symbol'])
 
     return contracts
-
-
-print(get_contracts())
