@@ -2,6 +2,12 @@ import pprint
 import tkinter as tk
 import logging
 from connectors.binance_futures import BinanceFuturesClient
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+public_key = os.getenv("PUBLIC_KEY")
+secret_key = os.getenv("SECRET_KEY")
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -21,7 +27,7 @@ logger.addHandler(fileHandler)
 
 
 if __name__ == '__main__':
-    binance = BinanceFuturesClient(False)
+    binance = BinanceFuturesClient(public_key, secret_key, True)
 
     pprint.pprint(binance.get_historical_candles("BTCUSDT", "1h"))
 
