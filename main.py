@@ -29,7 +29,7 @@ logger.addHandler(fileHandler)
 if __name__ == '__main__':
     binance = BinanceFuturesClient(public_key, secret_key, True)
 
-    pprint.pprint(binance.get_historical_candles("BTCUSDT", "1h"))
+    pprint.pprint(binance.get_balances())
 
     root = tk.Tk()
     root.mainloop()

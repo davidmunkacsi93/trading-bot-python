@@ -1,5 +1,11 @@
 import logging
 import requests
+import time
+
+from urllib.parse import urlencode
+
+import hmac
+import hashlib
 
 logger = logging.getLogger()
 
@@ -7,20 +13,25 @@ logger = logging.getLogger()
 class BinanceFuturesClient:
     def __init__(self, public_key, secret_key, testnet):
         if testnet:
-            self.base_url = "https://testnet.binance.vision"
+            self.base_url = "https://testnet.binancefuture.com"
         else:
             self.base_url = "https://api.binance.com"
 
         self.public_key = public_key
         self.secret_key = secret_key
 
+        self.headers = {'X-MBX-APIKEY': self.public_key}
+
         self.prices = dict()
 
         logger.info("Binance Futures Client successfully initialized")
 
+    def generate_signature(self, data):
+        return hmac.new(self.secret_key.encode(), urlencode(data).encode(), hashlib.sha256).hexdigest()
+
     def make_request(self, method, endpoint, data):
         if method == "GET":
-            response = requests.get(self.base_url + endpoint, params=data)
+            response = requests.get(self.base_url + endpoint, params=data, headers=self.headers)
         else:
             raise ValueError()
 
@@ -32,7 +43,7 @@ class BinanceFuturesClient:
             return None
 
     def get_contracts(self):
-        exchange_info = self.make_request("GET", "/api/v3/exchangeInfo", None)
+        exchange_info = self.make_request("GET", "/fapi/v1/exchangeInfo", None)
 
         contracts = dict()
 
@@ -48,7 +59,7 @@ class BinanceFuturesClient:
         data['interval'] = interval
         data['limit'] = 1000
 
-        raw_candles = self.make_request("GET", "/api/v3/klines", data)
+        raw_candles = self.make_request("GET", "/fapi/v1/klines", data)
 
         candles = []
 
@@ -62,7 +73,7 @@ class BinanceFuturesClient:
         data = dict()
         data['symbol'] = symbol
 
-        ob_data = self.make_request("GET", "/api/v3/ticker/bookTicker", data)
+        ob_data = self.make_request("GET", "/fapi/v1/ticker/bookTicker", data)
 
         if ob_data is not None:
             if symbol not in self.prices:
@@ -74,7 +85,18 @@ class BinanceFuturesClient:
         return self.prices[symbol]
 
     def get_balances(self):
-        return
+        data = dict()
+        data['timestamp'] = int(time.time()*1000)
+        data['signature'] = self.generate_signature(data)
+
+        balances = dict()
+
+        account_data = self.make_request("GET", "/fapi/v2/account", data)
+
+        if account_data is not None:
+            for asset in account_data['assets']:
+                balances[asset['asset']] = asset
+        return balances
 
     def place_order(self):
         return
@@ -82,5 +104,13 @@ class BinanceFuturesClient:
     def cancel_order(self):
         return
 
-    def get_order_status(self):
-        return
+    def get_order_status(self, symbol, order_id):
+        data = dict()
+        data['timestamp'] = int(time.time()*1000)
+        data['signature'] = self.generate_signature(data)
+        data['symbol'] = symbol
+        data['orderId'] = order_id
+
+        order_status = self.make_request("GET", "/fapi/v1/order", data)
+
+        return order_status
