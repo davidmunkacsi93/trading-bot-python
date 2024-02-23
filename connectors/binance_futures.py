@@ -124,10 +124,11 @@ class BinanceFuturesClient:
 
     def cancel_order(self, symbol, order_id):
         data = dict()
-        data['timestamp'] = int(time.time() * 1000)
-        data['signature'] = self.generate_signature(data)
         data['symbol'] = symbol
         data['orderId'] = order_id
+
+        data['timestamp'] = int(time.time() * 1000)
+        data['signature'] = self.generate_signature(data)
 
         order_status = self.make_request("DELETE", "/fapi/v1/order", data)
 
@@ -135,10 +136,11 @@ class BinanceFuturesClient:
 
     def get_order_status(self, symbol, order_id):
         data = dict()
-        data['timestamp'] = int(time.time()*1000)
-        data['signature'] = self.generate_signature(data)
         data['symbol'] = symbol
         data['orderId'] = order_id
+
+        data['timestamp'] = int(time.time()*1000)
+        data['signature'] = self.generate_signature(data)
 
         order_status = self.make_request("GET", "/fapi/v1/order", data)
 
