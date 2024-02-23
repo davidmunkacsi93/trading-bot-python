@@ -5,7 +5,7 @@ from connectors.binance_futures import BinanceFuturesClient
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+load_dotenv("binance-keys.env")
 public_key = os.getenv("PUBLIC_KEY")
 secret_key = os.getenv("SECRET_KEY")
 

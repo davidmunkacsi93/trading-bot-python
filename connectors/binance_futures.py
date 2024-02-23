@@ -7,7 +7,7 @@ logger = logging.getLogger()
 class BinanceFuturesClient:
     def __init__(self, public_key, secret_key, testnet):
         if testnet:
-            self.base_url = "https://testnet.binance.vision/api"
+            self.base_url = "https://testnet.binance.vision"
         else:
             self.base_url = "https://api.binance.com"
 
