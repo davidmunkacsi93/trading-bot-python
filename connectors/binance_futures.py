@@ -1,11 +1,14 @@
+import hashlib
+import hmac
 import logging
-import requests
 import time
-
 from urllib.parse import urlencode
 
-import hmac
-import hashlib
+import requests
+import threading
+import websocket
+import ssl
+import json
 
 logger = logging.getLogger()
 
@@ -14,8 +17,10 @@ class BinanceFuturesClient:
     def __init__(self, public_key, secret_key, testnet):
         if testnet:
             self.base_url = "https://testnet.binancefuture.com"
+            self.wss_url = "wss://fstream.binancefuture.com/ws"
         else:
             self.base_url = "https://api.binance.com"
+            self.wss_url = "wss://fstream.binance.com/ws"
 
         self.public_key = public_key
         self.secret_key = secret_key
@@ -23,6 +28,10 @@ class BinanceFuturesClient:
         self.headers = {'X-MBX-APIKEY': self.public_key}
 
         self.prices = dict()
+        self.id = 1
+
+        websocket_thread = threading.Thread(target=self.start_websocket)
+        websocket_thread.start()
 
         logger.info("Binance Futures Client successfully initialized")
 
@@ -145,3 +154,48 @@ class BinanceFuturesClient:
         order_status = self.make_request("GET", "/fapi/v1/order", data)
 
         return order_status
+
+
+    def start_websocket(self):
+        self.ws = websocket.WebSocketApp(self.wss_url,
+                                    on_open=self.on_websocket_open,
+                                    on_close=self.on_websocket_closed,
+                                    on_error=self.on_websocket_error,
+                                    on_message=self.on_websocket_message)
+        self.ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
+
+    def on_websocket_open(self, websocket):
+        logger.info("Binance websocket connection opened...")
+        self.subscribe_channel("BTCUSDT")
+
+    def on_websocket_closed(self, websocket, close_status_code, close_message):
+        logger.info("Binance websocket connection closed...")
+
+    def on_websocket_error(self, websocket, error):
+        logger.info(f"Binance websocket connection error: {error}")
+
+    def on_websocket_message(self, websocket, message):
+        data = json.loads(message)
+        if "e" in data and data['e'] == "bookTicker":
+            symbol = data['s']
+
+            if symbol not in self.prices:
+                self.prices[symbol] = {'bid': float(data['b']), 'ask': float(data['a'])}
+            else:
+                self.prices[symbol]['bid'] = float(data['b'])
+                self.prices[symbol]['ask'] = float(data['a'])
+            print(self.prices[symbol])
+
+    def subscribe_channel(self, symbol):
+        data = dict()
+        data['method'] = "SUBSCRIBE"
+
+        data['params'] = []
+        data['params'].append(f"{symbol.lower()}@bookTicker")
+
+        data['id'] = self.id
+
+        self.ws.send(json.dumps(data))
+
+        self.id += 1
+

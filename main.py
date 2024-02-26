@@ -1,9 +1,10 @@
-import pprint
-import tkinter as tk
 import logging
-from connectors.binance_futures import BinanceFuturesClient
-from dotenv import load_dotenv
 import os
+import tkinter as tk
+
+from dotenv import load_dotenv
+
+from connectors.binance_futures import BinanceFuturesClient
 
 load_dotenv("binance-keys.env")
 public_key = os.getenv("PUBLIC_KEY")
@@ -28,10 +29,6 @@ logger.addHandler(fileHandler)
 
 if __name__ == '__main__':
     binance = BinanceFuturesClient(public_key, secret_key, True)
-
-    # print(binance.place_order("BTCUSDT", "BUY", 0.01, "LIMIT", 20000, "GTC"))
-    print(binance.get_order_status("BTCUSDT", 3709320385))
-    print(binance.cancel_order("BTCUSDT", 3709320385))
 
     root = tk.Tk()
     root.mainloop()
